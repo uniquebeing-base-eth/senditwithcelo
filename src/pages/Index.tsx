@@ -1,9 +1,27 @@
 import { useWallet } from "@/hooks/useWallet";
 import { TipForm } from "@/components/TipForm";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+
+const WALLET_LABELS: Record<string, string> = {
+  minipay: "MiniPay",
+  valora: "Valora",
+  metamask: "MetaMask",
+  injected: "Wallet",
+};
 
 const Index = () => {
-  const { address, provider, connecting, connect, disconnect } = useWallet();
+  const { address, provider, connecting, connect, disconnect, walletType } = useWallet();
+
+  const handleConnect = async () => {
+    try {
+      await connect();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to connect wallet");
+    }
+  };
+
+  const hasWallet = typeof window !== "undefined" && !!(window as any).ethereum;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -27,12 +45,20 @@ const Index = () => {
                 Connect your wallet to start tipping
               </p>
               <Button
-                onClick={connect}
+                onClick={handleConnect}
                 disabled={connecting}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold px-8"
               >
                 {connecting ? "Connecting..." : "Connect Wallet"}
               </Button>
+              {!hasWallet && (
+                <p className="text-xs text-muted-foreground/70">
+                  Works with{" "}
+                  <a href="https://www.opera.com/products/minipay" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">MiniPay</a>,{" "}
+                  <a href="https://valoraapp.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Valora</a>,{" "}
+                  or <a href="https://metamask.io" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">MetaMask</a>
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-6">
@@ -42,6 +68,9 @@ const Index = () => {
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   <span className="text-xs font-mono text-muted-foreground">
                     {address.slice(0, 6)}...{address.slice(-4)}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                    {WALLET_LABELS[walletType] || "Wallet"}
                   </span>
                 </div>
                 <button
