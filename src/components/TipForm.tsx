@@ -33,9 +33,17 @@ export function TipForm({ provider, senderAddress }: TipFormProps) {
 
       // Check allowance and approve if needed
       const tokenContract = new Contract(selectedToken.address, ERC20_ABI, signer);
-      const currentAllowance = await tokenContract.allowance(senderAddress, CELOTIP_ADDRESS);
+      let needsApproval = true;
 
-      if (currentAllowance < parsedAmount) {
+      try {
+        const currentAllowance = await tokenContract.allowance(senderAddress, CELOTIP_ADDRESS);
+        needsApproval = currentAllowance < parsedAmount;
+      } catch {
+        // Some wallets (MiniPay) may fail on allowance check — approve anyway
+        needsApproval = true;
+      }
+
+      if (needsApproval) {
         toast.info("Approving token spend...");
         const approveTx = await tokenContract.approve(CELOTIP_ADDRESS, parsedAmount);
         await approveTx.wait();
