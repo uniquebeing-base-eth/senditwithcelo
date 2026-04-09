@@ -81,7 +81,7 @@ const Index = () => {
                 </button>
               </div>
 
-              <TipForm provider={provider!} senderAddress={address} />
+              <TipForm provider={provider!} senderAddress={address} walletType={walletType} />
             </div>
           )}
         </div>
