@@ -1,20 +1,22 @@
 import { useState, useMemo, useEffect } from "react";
-import { Contract, parseUnits, formatUnits } from "ethers";
-import type { BrowserProvider } from "ethers";
+import { formatUnits, parseUnits } from "viem";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { CELOTIP_ADDRESS, CELOTIP_ABI, ERC20_ABI, CELO_TOKENS } from "@/lib/contract";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import type { WalletType } from "@/hooks/useWallet";
 
 interface TipFormProps {
-  provider: BrowserProvider;
-  senderAddress: string;
-  walletType: string;
+  walletClient: any;
+  publicClient: any;
+  senderAddress: `0x${string}`;
+  walletType: WalletType;
 }
 
 const PRESET_AMOUNTS = ["1", "5", "10", "25"];
 
-export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
+export function TipForm({ walletClient, publicClient, senderAddress, walletType }: TipFormProps) {
   const availableTokens = useMemo(() => {
     if (walletType === "minipay") {
       return CELO_TOKENS.filter((t) => t.symbol !== "CELO");
@@ -35,27 +37,26 @@ export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
     const fetchBalances = async () => {
       setLoadingBalances(true);
       const newBalances: Record<string, string> = {};
-      try {
-        const signer = await provider.getSigner();
-        await Promise.all(
-          availableTokens.map(async (token) => {
-            try {
-              const contract = new Contract(token.address, ERC20_ABI, signer);
-              const bal = await contract.balanceOf(senderAddress);
-              newBalances[token.symbol] = parseFloat(formatUnits(bal, token.decimals)).toFixed(2);
-            } catch {
-              newBalances[token.symbol] = "—";
-            }
-          })
-        );
-      } catch {
-        // ignore
-      }
+      await Promise.all(
+        availableTokens.map(async (token) => {
+          try {
+            const bal = await publicClient.readContract({
+              address: token.address as `0x${string}`,
+              abi: ERC20_ABI,
+              functionName: "balanceOf",
+              args: [senderAddress],
+            });
+            newBalances[token.symbol] = parseFloat(formatUnits(bal as bigint, token.decimals)).toFixed(2);
+          } catch {
+            newBalances[token.symbol] = "—";
+          }
+        })
+      );
       setBalances(newBalances);
       setLoadingBalances(false);
     };
     fetchBalances();
-  }, [provider, senderAddress, availableTokens]);
+  }, [publicClient, senderAddress, availableTokens]);
 
   const handleSend = async () => {
     if (!recipient || !amount) {
@@ -65,14 +66,20 @@ export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
 
     setSending(true);
     try {
-      const signer = await provider.getSigner();
       const parsedAmount = parseUnits(amount, selectedToken.decimals);
+      const tokenAddress = selectedToken.address as `0x${string}`;
+      const recipientAddress = recipient as `0x${string}`;
 
-      const tokenContract = new Contract(selectedToken.address, ERC20_ABI, signer);
+      // Check balance
       try {
-        const balance = await tokenContract.balanceOf(senderAddress);
-        if (balance < parsedAmount) {
-          toast.error(`Insufficient ${selectedToken.symbol} balance. You have ${formatUnits(balance, selectedToken.decimals)} ${selectedToken.symbol}`);
+        const balance = await publicClient.readContract({
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: "balanceOf",
+          args: [senderAddress],
+        });
+        if ((balance as bigint) < parsedAmount) {
+          toast.error(`Insufficient ${selectedToken.symbol} balance. You have ${formatUnits(balance as bigint, selectedToken.decimals)} ${selectedToken.symbol}`);
           setSending(false);
           return;
         }
@@ -80,47 +87,67 @@ export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
         // Continue if balance check fails
       }
 
+      // Check allowance
       let needsApproval = true;
       try {
-        const currentAllowance = await tokenContract.allowance(senderAddress, CELOTIP_ADDRESS);
-        needsApproval = currentAllowance < parsedAmount;
+        const currentAllowance = await publicClient.readContract({
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: "allowance",
+          args: [senderAddress, CELOTIP_ADDRESS],
+        });
+        needsApproval = (currentAllowance as bigint) < parsedAmount;
       } catch {
         needsApproval = true;
       }
 
       if (needsApproval) {
         toast.info("Approving token spend...");
-        const approveTx = await tokenContract.approve(CELOTIP_ADDRESS, parsedAmount);
-        await approveTx.wait();
+        const approveHash = await walletClient.writeContract({
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: "approve",
+          args: [CELOTIP_ADDRESS, parsedAmount],
+          account: senderAddress,
+          chain: walletClient.chain,
+        });
+        await publicClient.waitForTransactionReceipt({ hash: approveHash });
         toast.success("Approval confirmed!");
       }
 
+      // Send tip
       toast.info("Sending tip...");
-      const tipContract = new Contract(CELOTIP_ADDRESS, CELOTIP_ABI, signer);
-      const tx = await tipContract.sendTip(
-        recipient,
-        selectedToken.address,
-        parsedAmount,
-        "tip",
-        message || "sent via CeloTip app"
-      );
-      await tx.wait();
+      const tipHash = await walletClient.writeContract({
+        address: CELOTIP_ADDRESS,
+        abi: CELOTIP_ABI,
+        functionName: "sendTip",
+        args: [recipientAddress, tokenAddress, parsedAmount, "tip", message || "sent via CeloTip app"],
+        account: senderAddress,
+        chain: walletClient.chain,
+      });
+      await publicClient.waitForTransactionReceipt({ hash: tipHash });
 
       toast.success(`Tipped ${amount} ${selectedToken.symbol}!`);
       setAmount("");
       setRecipient("");
       setMessage("");
 
-      // Refresh balances after successful tip
-      const contract = new Contract(selectedToken.address, ERC20_ABI, await provider.getSigner());
-      const newBal = await contract.balanceOf(senderAddress);
-      setBalances(prev => ({ ...prev, [selectedToken.symbol]: parseFloat(formatUnits(newBal, selectedToken.decimals)).toFixed(2) }));
+      // Refresh balance
+      try {
+        const newBal = await publicClient.readContract({
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: "balanceOf",
+          args: [senderAddress],
+        });
+        setBalances(prev => ({ ...prev, [selectedToken.symbol]: parseFloat(formatUnits(newBal as bigint, selectedToken.decimals)).toFixed(2) }));
+      } catch { /* ignore */ }
     } catch (err: any) {
       console.error(err);
-      const msg = err?.reason || err?.message || "Transaction failed";
-      if (msg.includes("INSUFFICIENT_FUNDS") || msg.includes("insufficient funds")) {
-        toast.error("Not enough funds for gas fees. Make sure you have cUSD or cEUR for gas on MiniPay.");
-      } else if (msg.includes("rejected") || msg.includes("-32603")) {
+      const msg = err?.shortMessage || err?.message || "Transaction failed";
+      if (msg.includes("insufficient funds") || msg.includes("INSUFFICIENT")) {
+        toast.error("Not enough funds for gas. On MiniPay, ensure you have cUSD/cEUR for gas fees.");
+      } else if (msg.includes("rejected") || msg.includes("denied")) {
         toast.error("Transaction was rejected");
       } else {
         toast.error(msg);

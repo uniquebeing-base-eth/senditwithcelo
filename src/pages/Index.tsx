@@ -11,7 +11,7 @@ const WALLET_LABELS: Record<string, string> = {
 };
 
 const Index = () => {
-  const { address, provider, connecting, connect, disconnect, walletType } = useWallet();
+  const { address, walletClient, publicClient, connecting, connect, disconnect, walletType } = useWallet();
 
   const handleConnect = async () => {
     try {
@@ -27,7 +27,8 @@ const Index = () => {
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md space-y-8">
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3">
+          <img src="/logo.png" alt="CeloTip" width={64} height={64} className="mx-auto" />
           <h1 className="text-4xl font-bold font-display tracking-tight">
             Celo<span className="text-primary">Tip</span>
           </h1>
@@ -81,7 +82,12 @@ const Index = () => {
                 </button>
               </div>
 
-              <TipForm provider={provider!} senderAddress={address} walletType={walletType} />
+              <TipForm
+                walletClient={walletClient!}
+                publicClient={publicClient!}
+                senderAddress={address}
+                walletType={walletType}
+              />
             </div>
           )}
         </div>

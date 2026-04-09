@@ -1,4 +1,4 @@
-export const CELOTIP_ADDRESS = "0x6b3A9c2b4b4BB24D5DFa59132499cb4Fd29C733e";
+export const CELOTIP_ADDRESS = "0x6b3A9c2b4b4BB24D5DFa59132499cb4Fd29C733e" as const;
 
 export const CELOTIP_ABI = [
   {
@@ -14,7 +14,7 @@ export const CELOTIP_ABI = [
     stateMutability: "nonpayable",
     type: "function",
   },
-];
+] as const;
 
 export const ERC20_ABI = [
   {
@@ -44,36 +44,13 @@ export const ERC20_ABI = [
     stateMutability: "view",
     type: "function",
   },
-  {
-    inputs: [],
-    name: "decimals",
-    outputs: [{ name: "", type: "uint8" }],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "symbol",
-    outputs: [{ name: "", type: "string" }],
-    stateMutability: "view",
-    type: "function",
-  },
-];
+] as const;
 
 // Common Celo tokens
 export const CELO_TOKENS = [
-  { address: "0x471EcE3750Da237f93B8E339c536989b8978a438", symbol: "CELO", decimals: 18 },
-  { address: "0x765DE816845861e75A25fCA122bb6898B8B1282a", symbol: "cUSD", decimals: 18 },
-  { address: "0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73", symbol: "cEUR", decimals: 18 },
+  { address: "0x471EcE3750Da237f93B8E339c536989b8978a438" as const, symbol: "CELO", decimals: 18 },
+  { address: "0x765DE816845861e75A25fCA122bb6898B8B1282a" as const, symbol: "cUSD", decimals: 18 },
+  { address: "0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73" as const, symbol: "cEUR", decimals: 18 },
 ];
 
 export const CELO_CHAIN_ID = 42220;
-export const CELO_RPC = "https://forno.celo.org";
-
-export const CELO_CHAIN_CONFIG = {
-  chainId: "0xa4ec",
-  chainName: "Celo Mainnet",
-  nativeCurrency: { name: "CELO", symbol: "CELO", decimals: 18 },
-  rpcUrls: ["https://forno.celo.org"],
-  blockExplorerUrls: ["https://celoscan.io"],
-};

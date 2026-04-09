@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
-import { BrowserProvider } from "ethers";
-import { CELO_CHAIN_CONFIG, CELO_CHAIN_ID } from "@/lib/contract";
+import { createWalletClient, createPublicClient, custom } from "viem";
+import { celo } from "viem/chains";
 
-type WalletType = "minipay" | "valora" | "metamask" | "injected";
+export type WalletType = "minipay" | "valora" | "metamask" | "injected";
 
 function detectWalletType(): WalletType {
   const eth = (window as any).ethereum;
@@ -14,10 +14,27 @@ function detectWalletType(): WalletType {
 }
 
 export function useWallet() {
-  const [address, setAddress] = useState<string | null>(null);
-  const [provider, setProvider] = useState<BrowserProvider | null>(null);
+  const [address, setAddress] = useState<`0x${string}` | null>(null);
+  const [walletClient, setWalletClient] = useState<any>(null);
+  const [publicClient, setPublicClient] = useState<any>(null);
   const [connecting, setConnecting] = useState(false);
   const [walletType, setWalletType] = useState<WalletType>("injected");
+
+  const setupClients = useCallback((eth: any, account: `0x${string}`) => {
+    const wClient = createWalletClient({
+      account,
+      chain: celo,
+      transport: custom(eth),
+    });
+    const pClient = createPublicClient({
+      chain: celo,
+      transport: custom(eth),
+    });
+    setWalletClient(wClient);
+    setPublicClient(pClient);
+    setAddress(account);
+    setWalletType(detectWalletType());
+  }, []);
 
   const connect = useCallback(async () => {
     const eth = (window as any).ethereum;
@@ -28,21 +45,17 @@ export function useWallet() {
     setConnecting(true);
     try {
       const type = detectWalletType();
-      setWalletType(type);
-
-      // Request accounts
       const accounts: string[] = await eth.request({ method: "eth_requestAccounts", params: [] });
-      
+
       if (!accounts || accounts.length === 0) {
         throw new Error("No accounts found");
       }
 
-      // For MiniPay/Valora, skip chain switching - they're already on Celo
+      // For non-Celo-native wallets, switch chain
       const isCeloNative = type === "minipay" || type === "valora";
-      
       if (!isCeloNative) {
         const chainId = await eth.request({ method: "eth_chainId" });
-        if (parseInt(chainId, 16) !== CELO_CHAIN_ID) {
+        if (parseInt(chainId, 16) !== 42220) {
           try {
             await eth.request({
               method: "wallet_switchEthereumChain",
@@ -52,7 +65,13 @@ export function useWallet() {
             if (e.code === 4902) {
               await eth.request({
                 method: "wallet_addEthereumChain",
-                params: [CELO_CHAIN_CONFIG],
+                params: [{
+                  chainId: "0xa4ec",
+                  chainName: "Celo Mainnet",
+                  nativeCurrency: { name: "CELO", symbol: "CELO", decimals: 18 },
+                  rpcUrls: ["https://forno.celo.org"],
+                  blockExplorerUrls: ["https://celoscan.io"],
+                }],
               });
             } else {
               throw e;
@@ -61,18 +80,16 @@ export function useWallet() {
         }
       }
 
-      // Create provider AFTER chain switching is complete
-      const browserProvider = new BrowserProvider(eth);
-      setProvider(browserProvider);
-      setAddress(accounts[0]);
+      setupClients(eth, accounts[0] as `0x${string}`);
     } finally {
       setConnecting(false);
     }
-  }, []);
+  }, [setupClients]);
 
   const disconnect = useCallback(() => {
     setAddress(null);
-    setProvider(null);
+    setWalletClient(null);
+    setPublicClient(null);
   }, []);
 
   // Listen for account/chain changes
@@ -84,15 +101,13 @@ export function useWallet() {
       if (accounts.length === 0) {
         disconnect();
       } else {
-        setAddress(accounts[0]);
-        setProvider(new BrowserProvider(eth));
+        setupClients(eth, accounts[0] as `0x${string}`);
       }
     };
 
     const handleChainChanged = () => {
-      // Refresh provider on chain change
       if (address) {
-        setProvider(new BrowserProvider(eth));
+        setupClients(eth, address);
       }
     };
 
@@ -103,30 +118,26 @@ export function useWallet() {
       eth.removeListener?.("accountsChanged", handleAccountsChanged);
       eth.removeListener?.("chainChanged", handleChainChanged);
     };
-  }, [address, disconnect]);
+  }, [address, disconnect, setupClients]);
 
-  // Auto-connect if already authorized (for MiniPay which auto-injects)
+  // Auto-connect
   useEffect(() => {
     const eth = (window as any).ethereum;
     if (!eth) return;
 
-    // MiniPay auto-connects
     if (eth.isMiniPay) {
       connect().catch(console.error);
       return;
     }
 
-    // For other wallets, check if already connected
     eth.request?.({ method: "eth_accounts", params: [] })
       .then((accounts: string[]) => {
         if (accounts && accounts.length > 0) {
-          setAddress(accounts[0]);
-          setWalletType(detectWalletType());
-          setProvider(new BrowserProvider(eth));
+          setupClients(eth, accounts[0] as `0x${string}`);
         }
       })
       .catch(console.error);
-  }, [connect]);
+  }, [connect, setupClients]);
 
-  return { address, provider, connecting, connect, disconnect, walletType };
+  return { address, walletClient, publicClient, connecting, connect, disconnect, walletType };
 }
