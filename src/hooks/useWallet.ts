@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
-import { createWalletClient, createPublicClient, custom, http } from "viem";
+import { createWalletClient, createPublicClient, custom } from "viem";
 import { celo } from "viem/chains";
-import type { WalletClient, PublicClient } from "viem";
 
 export type WalletType = "minipay" | "valora" | "metamask" | "injected";
 
@@ -16,8 +15,8 @@ function detectWalletType(): WalletType {
 
 export function useWallet() {
   const [address, setAddress] = useState<`0x${string}` | null>(null);
-  const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
-  const [publicClient, setPublicClient] = useState<PublicClient | null>(null);
+  const [walletClient, setWalletClient] = useState<any>(null);
+  const [publicClient, setPublicClient] = useState<any>(null);
   const [connecting, setConnecting] = useState(false);
   const [walletType, setWalletType] = useState<WalletType>("injected");
 

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { formatUnits, parseUnits } from "viem";
-import type { WalletClient, PublicClient } from "viem";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { CELOTIP_ADDRESS, CELOTIP_ABI, ERC20_ABI, CELO_TOKENS } from "@/lib/contract";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import type { WalletType } from "@/hooks/useWallet";
 
 interface TipFormProps {
-  walletClient: WalletClient;
-  publicClient: PublicClient;
+  walletClient: any;
+  publicClient: any;
   senderAddress: `0x${string}`;
   walletType: WalletType;
 }
