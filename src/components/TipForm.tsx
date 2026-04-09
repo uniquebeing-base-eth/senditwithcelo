@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Contract, parseUnits, formatUnits } from "ethers";
 import type { BrowserProvider } from "ethers";
 import { CELOTIP_ADDRESS, CELOTIP_ABI, ERC20_ABI, CELO_TOKENS } from "@/lib/contract";
@@ -15,7 +15,6 @@ interface TipFormProps {
 const PRESET_AMOUNTS = ["1", "5", "10", "25"];
 
 export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
-  // MiniPay doesn't support native CELO, only stablecoins
   const availableTokens = useMemo(() => {
     if (walletType === "minipay") {
       return CELO_TOKENS.filter((t) => t.symbol !== "CELO");
@@ -28,6 +27,35 @@ export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
   const [selectedToken, setSelectedToken] = useState(availableTokens.find(t => t.symbol === "cUSD") || availableTokens[0]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [balances, setBalances] = useState<Record<string, string>>({});
+  const [loadingBalances, setLoadingBalances] = useState(true);
+
+  // Fetch token balances
+  useEffect(() => {
+    const fetchBalances = async () => {
+      setLoadingBalances(true);
+      const newBalances: Record<string, string> = {};
+      try {
+        const signer = await provider.getSigner();
+        await Promise.all(
+          availableTokens.map(async (token) => {
+            try {
+              const contract = new Contract(token.address, ERC20_ABI, signer);
+              const bal = await contract.balanceOf(senderAddress);
+              newBalances[token.symbol] = parseFloat(formatUnits(bal, token.decimals)).toFixed(2);
+            } catch {
+              newBalances[token.symbol] = "—";
+            }
+          })
+        );
+      } catch {
+        // ignore
+      }
+      setBalances(newBalances);
+      setLoadingBalances(false);
+    };
+    fetchBalances();
+  }, [provider, senderAddress, availableTokens]);
 
   const handleSend = async () => {
     if (!recipient || !amount) {
@@ -40,7 +68,6 @@ export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
       const signer = await provider.getSigner();
       const parsedAmount = parseUnits(amount, selectedToken.decimals);
 
-      // Check balance first
       const tokenContract = new Contract(selectedToken.address, ERC20_ABI, signer);
       try {
         const balance = await tokenContract.balanceOf(senderAddress);
@@ -53,7 +80,6 @@ export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
         // Continue if balance check fails
       }
 
-      // Check allowance and approve if needed
       let needsApproval = true;
       try {
         const currentAllowance = await tokenContract.allowance(senderAddress, CELOTIP_ADDRESS);
@@ -69,7 +95,6 @@ export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
         toast.success("Approval confirmed!");
       }
 
-      // Send tip
       toast.info("Sending tip...");
       const tipContract = new Contract(CELOTIP_ADDRESS, CELOTIP_ABI, signer);
       const tx = await tipContract.sendTip(
@@ -85,6 +110,11 @@ export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
       setAmount("");
       setRecipient("");
       setMessage("");
+
+      // Refresh balances after successful tip
+      const contract = new Contract(selectedToken.address, ERC20_ABI, await provider.getSigner());
+      const newBal = await contract.balanceOf(senderAddress);
+      setBalances(prev => ({ ...prev, [selectedToken.symbol]: parseFloat(formatUnits(newBal, selectedToken.decimals)).toFixed(2) }));
     } catch (err: any) {
       console.error(err);
       const msg = err?.reason || err?.message || "Transaction failed";
@@ -110,13 +140,20 @@ export function TipForm({ provider, senderAddress, walletType }: TipFormProps) {
             <button
               key={token.symbol}
               onClick={() => setSelectedToken(token)}
-              className={`px-4 py-2 rounded-lg text-sm font-mono font-medium transition-all ${
+              className={`flex flex-col items-center px-4 py-2 rounded-lg text-sm font-mono font-medium transition-all ${
                 selectedToken.symbol === token.symbol
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
               }`}
             >
-              {token.symbol}
+              <span>{token.symbol}</span>
+              <span className={`text-[10px] mt-0.5 ${
+                selectedToken.symbol === token.symbol
+                  ? "text-primary-foreground/70"
+                  : "text-muted-foreground"
+              }`}>
+                {loadingBalances ? "..." : balances[token.symbol] ?? "—"}
+              </span>
             </button>
           ))}
         </div>
