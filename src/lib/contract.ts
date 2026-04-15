@@ -1,10 +1,12 @@
 export const CELOTIP_ADDRESS = "0x6b3A9c2b4b4BB24D5DFa59132499cb4Fd29C733e" as const;
 
+// Updated ABI: sendTip is called by relayer with `from` param
 export const CELOTIP_ABI = [
   {
     inputs: [
-      { name: "recipient", type: "address" },
-      { name: "token", type: "address" },
+      { name: "from", type: "address" },
+      { name: "to", type: "address" },
+      { name: "tokenAddress", type: "address" },
       { name: "amount", type: "uint256" },
       { name: "interactionType", type: "string" },
       { name: "castHash", type: "string" },

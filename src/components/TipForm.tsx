@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { formatUnits, parseUnits } from "viem";
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-import { CELOTIP_ADDRESS, CELOTIP_ABI, ERC20_ABI, CELO_TOKENS } from "@/lib/contract";
+import { CELOTIP_ADDRESS, ERC20_ABI, CELO_TOKENS } from "@/lib/contract";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ export function TipForm({ walletClient, publicClient, senderAddress, walletType 
   const [selectedToken, setSelectedToken] = useState(availableTokens.find(t => t.symbol === "cUSD") || availableTokens[0]);
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState("");
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [loadingBalances, setLoadingBalances] = useState(true);
 
@@ -65,12 +66,14 @@ export function TipForm({ walletClient, publicClient, senderAddress, walletType 
     }
 
     setSending(true);
+    setStatus("");
     try {
       const parsedAmount = parseUnits(amount, selectedToken.decimals);
       const tokenAddress = selectedToken.address as `0x${string}`;
       const recipientAddress = recipient as `0x${string}`;
 
-      // Check balance
+      // Step 1: Check balance
+      setStatus("Checking balance...");
       try {
         const balance = await publicClient.readContract({
           address: tokenAddress,
@@ -81,13 +84,14 @@ export function TipForm({ walletClient, publicClient, senderAddress, walletType 
         if ((balance as bigint) < parsedAmount) {
           toast.error(`Insufficient ${selectedToken.symbol} balance. You have ${formatUnits(balance as bigint, selectedToken.decimals)} ${selectedToken.symbol}`);
           setSending(false);
+          setStatus("");
           return;
         }
       } catch {
         // Continue if balance check fails
       }
 
-      // Check allowance
+      // Step 2: Check allowance and approve if needed
       let needsApproval = true;
       try {
         const currentAllowance = await publicClient.readContract({
@@ -102,7 +106,8 @@ export function TipForm({ walletClient, publicClient, senderAddress, walletType 
       }
 
       if (needsApproval) {
-        toast.info("Approving token spend...");
+        setStatus("Approving token spend...");
+        toast.info("Please approve the token spend in your wallet");
         const approveHash = await walletClient.writeContract({
           address: tokenAddress,
           abi: ERC20_ABI,
@@ -115,22 +120,34 @@ export function TipForm({ walletClient, publicClient, senderAddress, walletType 
         toast.success("Approval confirmed!");
       }
 
-      // Send tip
+      // Step 3: Call backend relayer to send the tip
+      setStatus("Sending tip via relayer...");
       toast.info("Sending tip...");
-      const tipHash = await walletClient.writeContract({
-        address: CELOTIP_ADDRESS,
-        abi: CELOTIP_ABI,
-        functionName: "sendTip",
-        args: [recipientAddress, tokenAddress, parsedAmount, "tip", message || "sent via CeloTip app"],
-        account: senderAddress,
-        chain: walletClient.chain,
-      });
-      await publicClient.waitForTransactionReceipt({ hash: tipHash });
 
-      toast.success(`Tipped ${amount} ${selectedToken.symbol}!`);
+      const { data, error } = await supabase.functions.invoke('send-tip', {
+        body: {
+          from: senderAddress,
+          to: recipientAddress,
+          tokenAddress: tokenAddress,
+          amount: parsedAmount.toString(),
+          interactionType: "tip",
+          castHash: message || "sent via CeloTip app",
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || "Backend relayer failed");
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      toast.success(`Tipped ${amount} ${selectedToken.symbol}! Tx: ${data.hash?.slice(0, 10)}...`);
       setAmount("");
       setRecipient("");
       setMessage("");
+      setStatus("");
 
       // Refresh balance
       try {
@@ -149,11 +166,14 @@ export function TipForm({ walletClient, publicClient, senderAddress, walletType 
         toast.error("Not enough funds for gas. On MiniPay, ensure you have cUSD/cEUR for gas fees.");
       } else if (msg.includes("rejected") || msg.includes("denied")) {
         toast.error("Transaction was rejected");
+      } else if (msg.includes("allowance")) {
+        toast.error("Token approval insufficient. Please try again.");
       } else {
         toast.error(msg);
       }
     } finally {
       setSending(false);
+      setStatus("");
     }
   };
 
@@ -232,6 +252,13 @@ export function TipForm({ walletClient, publicClient, senderAddress, walletType 
           className="bg-secondary border-border"
         />
       </div>
+
+      {/* Status */}
+      {status && (
+        <div className="text-xs text-muted-foreground text-center animate-pulse">
+          {status}
+        </div>
+      )}
 
       {/* Send button */}
       <Button
