@@ -1,4 +1,4 @@
-# 💰 CeloTip
+# 💰 SenditwithCELO also known as celotip
 
 CeloTip is a decentralized tipping platform built on the **Celo Blockchain**. It allows users to send tips using **CELO**, **cUSD**, and **cEUR** with a gasless experience powered by a backend relayer.
 
@@ -63,8 +63,8 @@ CeloTip is optimized for the [Celo MiniPay](https://www.opera.com/products/minip
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/celotip.git
-   cd celotip
+   git clone https://github.com/uniquebeing-base-eth/senditwithCELO.git
+   cd senditwithCELO
    ```
 
 2. Install dependencies:
