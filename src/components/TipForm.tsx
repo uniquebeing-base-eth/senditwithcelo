@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import type { WalletType } from "@/hooks/useWallet";
 
+
 interface TipFormProps {
   walletClient: any;
   publicClient: any;
