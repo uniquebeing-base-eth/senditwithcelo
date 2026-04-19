@@ -65,7 +65,11 @@ const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
 
     return (
       <FormItemContext.Provider value={{ id }}>
-        <div ref={ref} className={cn("space-y-2", className)} {...props} />
+        <div
+          ref={ref}
+          className={cn("space-y-3 transition-all", className)}
+          {...props}
+        />
       </FormItemContext.Provider>
     );
   },
@@ -78,18 +82,34 @@ const FormLabel = React.forwardRef<
 >(({ className, ...props }, ref) => {
   const { error, formItemId } = useFormField();
 
-  return <Label ref={ref} className={cn(error && "text-destructive", className)} htmlFor={formItemId} {...props} />;
+  return (
+    <Label
+      ref={ref}
+      className={cn(
+        "text-sm font-medium transition-colors",
+        error ? "text-destructive" : "text-foreground",
+        className
+      )}
+      htmlFor={formItemId}
+      {...props}
+    />
+  );
 });
 FormLabel.displayName = "FormLabel";
 
 const FormControl = React.forwardRef<React.ElementRef<typeof Slot>, React.ComponentPropsWithoutRef<typeof Slot>>(
-  ({ ...props }, ref) => {
+  ({ className, ...props }, ref) => {
     const { error, formItemId, formDescriptionId, formMessageId } = useFormField();
 
     return (
       <Slot
         ref={ref}
         id={formItemId}
+        className={cn(
+          "transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          error && "ring-1 ring-destructive",
+          className
+        )}
         aria-describedby={!error ? `${formDescriptionId}` : `${formDescriptionId} ${formMessageId}`}
         aria-invalid={!!error}
         {...props}
@@ -103,7 +123,14 @@ const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttribu
   ({ className, ...props }, ref) => {
     const { formDescriptionId } = useFormField();
 
-    return <p ref={ref} id={formDescriptionId} className={cn("text-sm text-muted-foreground", className)} {...props} />;
+    return (
+      <p
+        ref={ref}
+        id={formDescriptionId}
+        className={cn("text-xs text-muted-foreground leading-relaxed", className)}
+        {...props}
+      />
+    );
   },
 );
 FormDescription.displayName = "FormDescription";
@@ -118,7 +145,15 @@ const FormMessage = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<
     }
 
     return (
-      <p ref={ref} id={formMessageId} className={cn("text-sm font-medium text-destructive", className)} {...props}>
+      <p
+        ref={ref}
+        id={formMessageId}
+        className={cn(
+          "text-xs font-medium text-destructive animate-in fade-in-50",
+          className
+        )}
+        {...props}
+      >
         {body}
       </p>
     );
