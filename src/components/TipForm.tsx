@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { formatUnits, parseUnits } from "viem";
 import { CELOTIP_ADDRESS, ERC20_ABI, CELO_TOKENS } from "@/lib/contract";
