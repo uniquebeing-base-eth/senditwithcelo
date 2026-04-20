@@ -4,6 +4,12 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Button component with flexible variants and sizes.
+ * Supports standard button styles (default, destructive, outline, secondary, ghost, link)
+ * and multiple sizes (default, sm, lg, icon).
+ * Also supports rendering as a child component using `asChild`.
+ */
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium",
   "ring-offset-background transition-all duration-200",
