@@ -27,8 +27,8 @@ const DrawerOverlay = React.forwardRef<
   <DrawerPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/70 backdrop-blur-sm",
-      "transition-opacity duration-200",
+      "fixed inset-0 z-50 bg-black/70 backdrop-blur-md",
+      "transition-opacity duration-300 ease-out",
       className
     )}
     {...props}
@@ -46,13 +46,16 @@ const DrawerContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed inset-x-0 bottom-0 z-50 mt-24 flex h-auto flex-col",
-        "rounded-t-2xl border border-border/50 bg-background",
-        "shadow-xl transition-all",
+        "rounded-t-3xl border border-border/40 bg-background",
+        "shadow-2xl transition-all duration-300 ease-out",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out",
+        "data-[state=open]:slide-in-from-bottom",
+        "data-[state=closed]:slide-out-to-bottom",
         className
       )}
       {...props}
     >
-      <div className="mx-auto mt-3 mb-2 h-1.5 w-[60px] rounded-full bg-muted/70" />
+      <div className="mx-auto mt-3 mb-2 h-1.5 w-[70px] rounded-full bg-muted/60 transition-all duration-200" />
       {children}
     </DrawerPrimitive.Content>
   </DrawerPortal>
@@ -65,7 +68,7 @@ const DrawerHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "grid gap-1.5 px-4 pb-2 pt-1 text-center sm:text-left",
+      "grid gap-2 px-5 pb-2 pt-2 text-center sm:text-left",
       className
     )}
     {...props}
@@ -79,7 +82,7 @@ const DrawerFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "mt-auto flex flex-col gap-2 p-4 pt-2",
+      "mt-auto flex flex-col gap-2.5 p-5 pt-3",
       className
     )}
     {...props}
@@ -94,7 +97,7 @@ const DrawerTitle = React.forwardRef<
   <DrawerPrimitive.Title
     ref={ref}
     className={cn(
-      "text-base font-semibold leading-none tracking-tight",
+      "text-base font-semibold leading-tight tracking-tight text-foreground",
       className
     )}
     {...props}
@@ -109,7 +112,7 @@ const DrawerDescription = React.forwardRef<
   <DrawerPrimitive.Description
     ref={ref}
     className={cn(
-      "text-sm text-muted-foreground leading-relaxed",
+      "text-sm text-muted-foreground leading-relaxed opacity-90",
       className
     )}
     {...props}
