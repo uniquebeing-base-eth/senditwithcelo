@@ -79,6 +79,12 @@ CeloTip is optimized for the [Celo MiniPay](https://www.opera.com/products/minip
 
 4. Access the application at `http://localhost:8080`
 
+5. use sdk by running
+
+    npm install senditwithcelo-sdk
+
+more resources : https://www.npmjs.com/package/senditwithcelo-sdk
+   
 ---
 
 ## 🔑 Environment Variables
