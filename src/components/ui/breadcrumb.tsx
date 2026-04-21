@@ -26,7 +26,7 @@ const BreadcrumbList = React.forwardRef<
   <ol
     ref={ref}
     className={cn(
-      "flex flex-wrap items-center gap-1.5 sm:gap-2.5",
+      "flex flex-wrap items-center gap-2 sm:gap-3",
       "text-sm text-muted-foreground",
       "break-words",
       className
@@ -43,7 +43,7 @@ const BreadcrumbItem = React.forwardRef<
   <li
     ref={ref}
     className={cn(
-      "inline-flex items-center gap-1.5",
+      "inline-flex items-center gap-2",
       className
     )}
     {...props}
@@ -63,8 +63,10 @@ const BreadcrumbLink = React.forwardRef<
     <Comp
       ref={ref}
       className={cn(
-        "transition-colors duration-200",
+        "relative transition-all duration-200 ease-out",
         "hover:text-foreground",
+        "after:absolute after:left-0 after:-bottom-0.5 after:h-[1px] after:w-0 after:bg-foreground after:transition-all after:duration-300",
+        "hover:after:w-full",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-sm",
         className
       )}
@@ -84,7 +86,8 @@ const BreadcrumbPage = React.forwardRef<
     aria-disabled="true"
     aria-current="page"
     className={cn(
-      "font-medium text-foreground",
+      "font-semibold text-foreground",
+      "tracking-tight",
       className
     )}
     {...props}
@@ -101,8 +104,9 @@ const BreadcrumbSeparator = ({
     role="presentation"
     aria-hidden="true"
     className={cn(
-      "text-muted-foreground/70",
-      "[&>svg]:size-3.5",
+      "text-muted-foreground/60 transition-colors duration-200",
+      "[&>svg]:size-3.5 [&>svg]:transition-transform",
+      "group-hover:[&>svg]:scale-110",
       className
     )}
     {...props}
@@ -121,12 +125,13 @@ const BreadcrumbEllipsis = ({
     aria-hidden="true"
     className={cn(
       "flex h-8 w-8 items-center justify-center rounded-md",
-      "text-muted-foreground hover:text-foreground transition-colors duration-200",
+      "text-muted-foreground transition-all duration-200 ease-out",
+      "hover:text-foreground hover:bg-muted/50",
       className
     )}
     {...props}
   >
-    <MoreHorizontal className="h-4 w-4" />
+    <MoreHorizontal className="h-4 w-4 transition-transform group-hover:scale-110" />
     <span className="sr-only">More</span>
   </span>
 );
