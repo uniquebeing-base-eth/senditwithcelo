@@ -12,22 +12,23 @@ import { cn } from "@/lib/utils";
  */
 const buttonVariants = cva(
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium",
-  "ring-offset-background transition-all duration-200",
+  "ring-offset-background transition-all duration-200 ease-out",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2",
   "disabled:pointer-events-none disabled:opacity-50",
   "[&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-  "active:scale-[0.98]",
+  "active:scale-[0.97]",
+  "relative overflow-hidden isolate",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:shadow-md",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-sm",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/90",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/90 hover:shadow-md",
         ghost:
           "hover:bg-accent hover:text-accent-foreground",
         link:
@@ -58,7 +59,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button";
     return (
       <Comp
-        className={cn(buttonVariants({ variant, size, className }))}
+        className={cn(
+          buttonVariants({ variant, size }),
+          "before:absolute before:inset-0 before:opacity-0 before:transition-opacity before:duration-300",
+          "before:bg-gradient-to-r before:from-transparent before:via-white/10 before:to-transparent",
+          "hover:before:opacity-100",
+          "hover:scale-[1.02]",
+          className
+        )}
         ref={ref}
         {...props}
       />
