@@ -13,8 +13,11 @@ const AccordionItem = React.forwardRef<
   <AccordionPrimitive.Item
     ref={ref}
     className={cn(
-      "border-b border-border/60 last:border-b-0 transition-all duration-300",
-      "hover:border-border hover:bg-muted/30 rounded-md px-2",
+      "group border-b border-border/50 last:border-b-0",
+      "transition-all duration-300 ease-out",
+      "hover:border-border hover:bg-muted/40",
+      "rounded-lg px-3",
+      "data-[state=open]:bg-muted/50 data-[state=open]:shadow-sm",
       className
     )}
     {...props}
@@ -30,23 +33,28 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Trigger
       ref={ref}
       className={cn(
-        "group flex flex-1 items-center justify-between py-4 px-2 text-sm font-medium tracking-tight",
+        "group flex flex-1 items-center justify-between",
+        "py-4 px-2 text-sm font-medium tracking-tight",
         "transition-all duration-300 ease-out",
         "hover:text-primary hover:pl-1",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-md",
-        "[&[data-state=open]]:text-primary",
+        "data-[state=open]:text-primary",
         className
       )}
       {...props}
     >
-      <span className="transition-colors duration-200 group-hover:text-primary/90">
+      <span className="transition-all duration-200 group-hover:text-primary/90">
         {children}
       </span>
 
       <ChevronDown
-        className="h-4 w-4 shrink-0 transition-all duration-300 ease-in-out 
-        group-hover:scale-110 group-hover:text-primary 
-        data-[state=open]:rotate-180 data-[state=open]:text-primary"
+        className={cn(
+          "h-4 w-4 shrink-0",
+          "transition-all duration-300 ease-in-out",
+          "group-hover:scale-110 group-hover:text-primary",
+          "data-[state=open]:rotate-180 data-[state=open]:text-primary",
+          "will-change-transform"
+        )}
       />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
@@ -60,7 +68,8 @@ const AccordionContent = React.forwardRef<
   <AccordionPrimitive.Content
     ref={ref}
     className={cn(
-      "overflow-hidden text-sm text-muted-foreground transition-all duration-300 ease-in-out",
+      "overflow-hidden text-sm text-muted-foreground",
+      "transition-all duration-300 ease-in-out",
       "data-[state=closed]:animate-accordion-up",
       "data-[state=open]:animate-accordion-down"
     )}
@@ -68,8 +77,11 @@ const AccordionContent = React.forwardRef<
   >
     <div
       className={cn(
-        "pb-5 pt-2 px-2 leading-relaxed tracking-normal",
-        "opacity-90 group-data-[state=open]:opacity-100",
+        "pb-5 pt-2 px-2 leading-relaxed",
+        "opacity-90",
+        "transition-all duration-300",
+        "data-[state=open]:opacity-100 data-[state=open]:translate-y-0",
+        "data-[state=closed]:-translate-y-1",
         className
       )}
     >
