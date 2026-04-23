@@ -29,7 +29,6 @@ const BreadcrumbList = React.forwardRef<
       "flex flex-wrap items-center gap-2 sm:gap-3",
       "text-sm text-muted-foreground",
       "break-words",
-      "group",
       className
     )}
     {...props}
@@ -45,7 +44,6 @@ const BreadcrumbItem = React.forwardRef<
     ref={ref}
     className={cn(
       "inline-flex items-center gap-2",
-      "transition-all duration-200",
       className
     )}
     {...props}
@@ -69,7 +67,6 @@ const BreadcrumbLink = React.forwardRef<
         "hover:text-foreground",
         "after:absolute after:left-0 after:-bottom-0.5 after:h-[1px] after:w-0 after:bg-foreground after:transition-all after:duration-300",
         "hover:after:w-full",
-        "hover:tracking-tight",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 rounded-sm",
         className
       )}
@@ -91,8 +88,6 @@ const BreadcrumbPage = React.forwardRef<
     className={cn(
       "font-semibold text-foreground",
       "tracking-tight",
-      "relative",
-      "after:absolute after:-bottom-0.5 after:left-0 after:h-[2px] after:w-full after:bg-primary/60 after:rounded-full",
       className
     )}
     {...props}
@@ -109,9 +104,9 @@ const BreadcrumbSeparator = ({
     role="presentation"
     aria-hidden="true"
     className={cn(
-      "text-muted-foreground/60 transition-all duration-200",
-      "[&>svg]:size-3.5 [&>svg]:transition-all",
-      "group-hover:[&>svg]:scale-110 group-hover:[&>svg]:text-foreground",
+      "text-muted-foreground/60 transition-colors duration-200",
+      "[&>svg]:size-3.5 [&>svg]:transition-transform",
+      "group-hover:[&>svg]:scale-110",
       className
     )}
     {...props}
@@ -119,4 +114,35 @@ const BreadcrumbSeparator = ({
     {children ?? <ChevronRight />}
   </li>
 );
-BreadcrumbSeparator.displayName = "Breadcrumb
+BreadcrumbSeparator.displayName = "BreadcrumbSeparator";
+
+const BreadcrumbEllipsis = ({
+  className,
+  ...props
+}: React.ComponentProps<"span">) => (
+  <span
+    role="presentation"
+    aria-hidden="true"
+    className={cn(
+      "flex h-8 w-8 items-center justify-center rounded-md",
+      "text-muted-foreground transition-all duration-200 ease-out",
+      "hover:text-foreground hover:bg-muted/50",
+      className
+    )}
+    {...props}
+  >
+    <MoreHorizontal className="h-4 w-4 transition-transform group-hover:scale-110" />
+    <span className="sr-only">More</span>
+  </span>
+);
+BreadcrumbEllipsis.displayName = "BreadcrumbElipssis";
+
+export {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  BreadcrumbEllipsis,
+};
