@@ -121,6 +121,18 @@ Deno.serve(async (req) => {
   } catch (error: unknown) {
     console.error('Send tip error:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Friendlier error for relayer out-of-gas
+    if (message.includes('insufficient funds') || message.includes('InsufficientFunds')) {
+      return new Response(JSON.stringify({ 
+        error: 'Relayer is temporarily out of gas. Please contact the app admin to refill the relayer wallet.',
+        details: 'The backend relayer wallet needs CELO to pay gas fees.',
+      }), {
+        status: 503,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
