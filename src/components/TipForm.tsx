@@ -170,6 +170,8 @@ export function TipForm({ walletClient, publicClient, senderAddress, walletType 
         toast.error("Transaction was rejected");
       } else if (msg.includes("allowance")) {
         toast.error("Token approval insufficient. Please try again.");
+      } else if (msg.includes("Relayer is temporarily out of gas") || msg.includes("out of gas")) {
+        toast.error("Relayer wallet needs to be refilled with CELO. Contact app admin.");
       } else {
         toast.error(msg);
       }
